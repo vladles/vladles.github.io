@@ -1,0 +1,67 @@
+html,
+body {
+	position: relative;
+	max-width: 100%;
+	height: 100vh;
+}
+
+
+footer {
+	position: absolute !important;
+	bottom: 0;
+	width: 100% !important;
+	height: 25px;
+}
+
+footer .seeyou {
+	font-size: 0.6em;
+	font-weight: bold;
+}
+
+.main-content {
+    padding: 3em 0;
+}
+
+.main-content .columns {
+	height: 100%;
+}
+
+.main-content h2 {
+	font-size: 2em;
+	font-weight: 600;
+}
+
+.main-content .block.content {
+	padding-right: 25%;
+}
+
+.nickname {
+	color: #000000;
+}
+
+.nickname p::before {
+	content: '@';
+	font-size: 22px;
+	display: inline;
+	color: #000000;
+}
+
+.nickname p::after {
+	content: '';
+	display: block;
+	position: absolute;
+	bottom: 0;
+	left: 22px;
+	right: 0;
+	width: calc(100% - 22px);
+	height: 3px;
+	background: #000000;
+}
+
+.nickname p {
+	display: inline-block;
+	position: relative;
+	font-size: 1.5em;
+	font-weight: bold;
+	letter-spacing: 0.05em;
+}
