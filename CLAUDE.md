@@ -4,20 +4,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Single-page personal site for Vlad Lesovskiy, served by GitHub Pages from the `master` branch at the custom domain in `CNAME` (`lesovskiy.com`). There is no build step, package manager, linter, or test suite: what is committed is what gets deployed, and pushing to `master` publishes.
+Single-page personal site for Vlad Lesovskiy, aimed at recruiters who search his name. It's served by GitHub Pages from the `master` branch at the custom domain in `CNAME` (`lesovskiy.com`). There is no build step and no package manager: what is committed is what gets deployed, and pushing to `master` publishes.
 
-## Local preview
-
-Asset paths are root-relative (`/assets/...`), so opening `index.html` directly via `file://` breaks the stylesheet and avatar. Serve the repo root instead:
+## Commands
 
 ```sh
-python3 -m http.server 8000   # then open http://localhost:8000
+python3 -m http.server 8000                    # local preview at http://localhost:8000
+python3 -m unittest discover -s tests -v       # all checks
+python3 -m unittest tests.test_site.SeoTests.test_jsonld_person   # one test
 ```
 
-## Structure
+Asset paths are root-relative (`/assets/...`), so opening `index.html` via `file://` breaks styles and images. Always preview through the server.
 
-- `index.html` — the entire site: header (`@vladles` nickname link), bio, contact links, avatar column, footer.
-- `assets/styles.css` — small set of overrides on top of Bulma.
-- Styling uses **Bulma 0.9.4** loaded from jsDelivr; layout relies on Bulma classes (`container`, `columns`, `column is-three-quarters`, `is-hidden-touch`, `content is-medium`). Prefer Bulma utility classes before adding custom CSS.
-- Custom CSS details worth knowing: the footer is `position: absolute` at the bottom of a `100vh` body, and the `.nickname` underline/`@` prefix are drawn with `::before`/`::after` pseudo-elements. The avatar column is hidden below 1024px (`is-hidden-touch`), matching the `max-width: 1023px` media query in `styles.css`.
-- `<head>` contains a Yandex site-verification meta tag; keep it.
+## How it fits together
+
+- `index.html` is the whole site: intro + Telegram CTA, experience, skills, education, outside work, and a contact-card footer. Its `<head>` carries all SEO: title/description, canonical, Open Graph/Twitter tags, and a JSON-LD `Person` block. The title, description and name forms are pinned by `tests/test_site.py`, so change the tests together with the copy.
+- `assets/styles.css` is hand-written (no framework). Colors are CSS variables on `:root`, redefined under `@media (prefers-color-scheme: dark)`. Fonts are Fraunces (headings) and Open Sans (body), self-hosted as Latin-subset woff2 in `assets/fonts/` and preloaded in `<head>`. Don't switch back to the Google Fonts stylesheet, which blocks rendering and cost about 7 Lighthouse performance points.
+- `_config.yml` excludes `docs`, `tests`, `tools`, `CLAUDE.md` and `README.md` from the published site. GitHub Pages runs Jekyll, which would otherwise publish them. **Add any new internal file or folder there.**
+- `assets/og.jpg` (1200×630 share image) is generated from `tools/og.html`. Rerun the Chrome + `sips` command in that file's header comment whenever the name or title changes.
+- `robots.txt` and `sitemap.xml` point search engines to the single URL. Bump `<lastmod>` when content changes.
+
+## Content rules
+
+- Copy comes from Vlad's CV (`Vlad_Lesovskiy_CV.pdf`). It is gitignored and must never be committed or linked.
+- English only. Name forms are exactly "Vlad Lesovskiy" and, in JSON-LD only, "Влад Лесовский". Don't invent a formal first name.
+- Keep the `yandex-verification` meta tag.
+- `docs/superpowers/` holds the redesign spec and plan.

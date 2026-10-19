@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- Share image template. Regenerate assets/og.jpg after changing name or title:
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+       --hide-scrollbars --window-size=1200,630 --virtual-time-budget=4000 \
+       --screenshot=/tmp/og.png "file://$PWD/tools/og.html"
+     sips -s format jpeg -s formatOptions 85 /tmp/og.png --out assets/og.jpg -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @font-face {
+            font-family: "Fraunces";
+            font-weight: 600;
+            src: url("../assets/fonts/fraunces-600-latin.woff2") format("woff2");
+        }
+
+        @font-face {
+            font-family: "Open Sans";
+            font-weight: 400 600;
+            src: url("../assets/fonts/open-sans-latin.woff2") format("woff2");
+        }
+
+        html, body {
+            margin: 0;
+            width: 1200px;
+            height: 630px;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            gap: 64px;
+            padding: 0 96px;
+            box-sizing: border-box;
+            background: #fbfaf7;
+            color: #1c1b19;
+            font-family: "Open Sans", sans-serif;
+            border-bottom: 16px solid #1f4fd1;
+        }
+
+        img {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-family: "Fraunces", Georgia, serif;
+            font-weight: 600;
+            font-size: 84px;
+            line-height: 1.05;
+            margin: 0 0 20px;
+        }
+
+        p {
+            font-size: 34px;
+            color: #6b6760;
+            margin: 0;
+        }
+
+        .site {
+            margin-top: 36px;
+            font-size: 26px;
+            font-weight: 600;
+            color: #1f4fd1;
+        }
+    </style>
+</head>
+
+<body>
+    <img src="../assets/avatar.jpg" alt="">
+    <div>
+        <h1>Vlad Lesovskiy</h1>
+        <p>Lead Software Engineer · Belgrade</p>
+        <p class="site">lesovskiy.com</p>
+    </div>
+</body>
+</html>

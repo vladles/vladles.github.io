@@ -1,2 +1,5 @@
 .DS_Store
 Vlad_Lesovskiy_CV.pdf
+__pycache__/
+.claude/
+.superpowers/
