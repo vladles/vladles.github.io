@@ -1,3 +1,20 @@
+/* Self-hosted Latin subsets (SIL Open Font License), so no third-party CSS blocks rendering */
+@font-face {
+	font-family: "Fraunces";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("/assets/fonts/fraunces-600-latin.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Open Sans";
+	font-style: normal;
+	font-weight: 400 600;
+	font-display: swap;
+	src: url("/assets/fonts/open-sans-latin.woff2") format("woff2");
+}
+
 :root {
 	--bg: #fbfaf7;
 	--text: #1c1b19;

@@ -138,6 +138,12 @@ class ContentTests(unittest.TestCase):
         self.assertEqual((img.get("alt"), img.get("width"), img.get("height")),
                          ("Vlad Lesovskiy", "640", "640"))
 
+    def test_avatar_serves_small_file_at_display_size(self):
+        img = next(i for i in Page.load().imgs if i["src"].endswith("avatar.jpg"))
+        self.assertIn("/assets/avatar-192.jpg 192w", img.get("srcset", ""))
+        self.assertEqual(img.get("sizes"), "96px")
+        self.assertEqual(jpeg_size(ROOT / "assets" / "avatar-192.jpg"), (192, 192))
+
 
 def css() -> str:
     return (ROOT / "assets" / "styles.css").read_text()
@@ -164,10 +170,21 @@ class StyleTests(unittest.TestCase):
         self.assertRegex(c, r'"Fraunces",[^;]*\bserif;')
         self.assertRegex(c, r'"Open Sans",[^;]*\bsans-serif;')
 
-    def test_fonts_swap_and_preconnect(self):
-        links = Page.load().links
-        self.assertTrue(any(l.get("rel") == "stylesheet" and "display=swap" in l.get("href", "") for l in links))
-        self.assertTrue(any(l.get("rel") == "preconnect" and l.get("href") == "https://fonts.gstatic.com" for l in links))
+    def test_fonts_self_hosted_with_swap(self):
+        p, c = Page.load(), css()
+        self.assertNotIn("fonts.googleapis.com", p.raw)  # no render-blocking third-party CSS
+        faces = re.findall(r"@font-face\s*\{(.*?)\}", c, re.S)
+        self.assertEqual({re.search(r'font-family:\s*"([^"]+)"', f).group(1) for f in faces},
+                         {"Fraunces", "Open Sans"})
+        for f in faces:
+            self.assertIn("font-display: swap", f)
+            url = re.search(r"url\(\"?(/assets/fonts/[^)\"]+\.woff2)", f).group(1)
+            self.assertTrue((ROOT / url.lstrip("/")).exists(), url)
+
+    def test_fonts_preloaded(self):
+        preloads = [l for l in Page.load().links if l.get("rel") == "preload"]
+        hrefs = {l["href"] for l in preloads if l.get("as") == "font" and "crossorigin" in l}
+        self.assertTrue(any("fraunces" in h for h in hrefs) and any("open-sans" in h for h in hrefs), hrefs)
 
     def test_favicon(self):
         links = Page.load().links
