@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import unittest
+import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -174,8 +175,68 @@ class StyleTests(unittest.TestCase):
         self.assertTrue((ROOT / "assets" / "favicon.svg").exists())
 
 
+def jpeg_size(path: Path) -> tuple[int, int]:
+    """(width, height) of a JPEG, read from its SOF marker."""
+    data = path.read_bytes()
+    i = 2
+    while i < len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker = data[i + 1]
+        if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+            h = int.from_bytes(data[i + 5:i + 7], "big")
+            w = int.from_bytes(data[i + 7:i + 9], "big")
+            return w, h
+        i += 2 + int.from_bytes(data[i + 2:i + 4], "big")
+    raise ValueError(f"no SOF marker in {path}")
+
+
+DESC = ("Vlad Lesovskiy — Lead Software Engineer in Belgrade. 10+ years building web and mobile "
+        "products with Laravel, Next.js and AWS. Open to new opportunities.")
+
+
 class SeoTests(unittest.TestCase):
-    pass
+    def test_title_and_description(self):
+        p = Page.load()
+        self.assertEqual(p.title, "Vlad Lesovskiy — Lead Software Engineer")
+        for k in ["description", "og:description", "twitter:description"]:
+            self.assertEqual(p.meta(k), DESC)
+        self.assertLessEqual(len(DESC), 160)
+
+    def test_canonical_and_lang(self):
+        p = Page.load()
+        canon = [l.get("href") for l in p.links if l.get("rel") == "canonical"]
+        self.assertEqual(canon, ["https://lesovskiy.com/"])
+        self.assertIn('<html lang="en"', p.raw)
+
+    def test_open_graph(self):
+        p = Page.load()
+        expected = {"og:type": "profile", "og:url": "https://lesovskiy.com/",
+                    "og:title": "Vlad Lesovskiy — Lead Software Engineer",
+                    "og:image:width": "1200", "og:image:height": "630",
+                    "profile:first_name": "Vlad", "profile:last_name": "Lesovskiy",
+                    "twitter:card": "summary_large_image"}
+        for k, v in expected.items():
+            self.assertEqual(p.meta(k), v, k)
+
+    def test_og_image_absolute_and_exists(self):
+        p = Page.load()
+        self.assertEqual(p.meta("og:image"), "https://lesovskiy.com/assets/og.jpg")
+        self.assertEqual(jpeg_size(ROOT / "assets" / "og.jpg"), (1200, 630))
+
+    def test_jsonld_person(self):
+        d = Page.load().jsonld[0]
+        self.assertEqual((d["@type"], d["name"], d["alternateName"]),
+                         ("Person", "Vlad Lesovskiy", "Влад Лесовский"))
+        self.assertEqual(d["url"], "https://lesovskiy.com/")
+        self.assertIn("https://www.linkedin.com/in/vladles95", d["sameAs"])
+        self.assertEqual(d["address"]["addressCountry"], "RS")
+
+    def test_robots_and_sitemap(self):
+        self.assertIn("Sitemap: https://lesovskiy.com/sitemap.xml", (ROOT / "robots.txt").read_text())
+        ET.parse(ROOT / "sitemap.xml")
+        self.assertIn("<loc>https://lesovskiy.com/</loc>", (ROOT / "sitemap.xml").read_text())
 
 
 if __name__ == "__main__":
