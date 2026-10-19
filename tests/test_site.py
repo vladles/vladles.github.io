@@ -98,11 +98,80 @@ class PublishingTests(unittest.TestCase):
 
 
 class ContentTests(unittest.TestCase):
-    pass
+    def test_single_h1_is_name(self):
+        p = Page.load()
+        self.assertEqual(p.count("h1"), 1)
+        self.assertIn("Vlad Lesovskiy", p.text)
+
+    def test_sections_present(self):
+        expected = {"intro", "experience", "skills", "education", "outside", "contact"}
+        self.assertTrue(expected <= Page.load().ids)
+
+    def test_contact_links(self):
+        a = Page.load().anchors
+        for href in ["https://t.me/vladles", "mailto:inbox@lesovskiy.com",
+                     "https://www.linkedin.com/in/vladles95", "https://github.com/vladles"]:
+            self.assertIn(href, a)
+
+    def test_telegram_cta_and_availability(self):
+        t = Page.load().text
+        self.assertIn("Message me on Telegram", t)
+        self.assertEqual(t.count("Open to new opportunities"), 1)
+
+    def test_experience_entries(self):
+        t = Page.load().text
+        for s in ["MaxRx", "Jun 2025 – Present", "CharityRx", "Jan 2020 – Jan 2026",
+                  "Pix Wireless", "Jan 2018 – Aug 2023", "CimpleO", "WordPress Monsters"]:
+            self.assertIn(s, t)
+
+    def test_forbidden_content(self):
+        r = Page.load().raw
+        for s in ["lesovskiy.ru", "bulma", "Vlad_Lesovskiy_CV.pdf", "I started as WordPress", "<script src"]:
+            self.assertNotIn(s, r)
+
+    def test_yandex_verification_kept(self):
+        self.assertEqual(Page.load().meta("yandex-verification"), "691bad7d13005913")
+
+    def test_avatar_has_alt_and_size(self):
+        img = next(i for i in Page.load().imgs if i["src"].endswith("avatar.jpg"))
+        self.assertEqual((img.get("alt"), img.get("width"), img.get("height")),
+                         ("Vlad Lesovskiy", "640", "640"))
+
+
+def css() -> str:
+    return (ROOT / "assets" / "styles.css").read_text()
+
+
+def dark_block(text: str) -> str:
+    m = re.search(r"@media\s*\(prefers-color-scheme:\s*dark\)\s*\{(.*?)\n\}", text, re.S)
+    return m.group(1) if m else ""
 
 
 class StyleTests(unittest.TestCase):
-    pass
+    def test_css_has_dark_mode(self):
+        block = dark_block(css())
+        for var in ["--bg", "--text", "--accent"]:
+            self.assertIn(var, block)
+
+    def test_css_prevents_overflow(self):
+        c = css()
+        self.assertIn("overflow-wrap: anywhere", c)
+        self.assertRegex(c, r"img\s*\{[^}]*max-width:\s*100%")
+
+    def test_font_fallbacks(self):
+        c = css()
+        self.assertRegex(c, r'"Fraunces",[^;]*\bserif;')
+        self.assertRegex(c, r'"Open Sans",[^;]*\bsans-serif;')
+
+    def test_fonts_swap_and_preconnect(self):
+        links = Page.load().links
+        self.assertTrue(any(l.get("rel") == "stylesheet" and "display=swap" in l.get("href", "") for l in links))
+        self.assertTrue(any(l.get("rel") == "preconnect" and l.get("href") == "https://fonts.gstatic.com" for l in links))
+
+    def test_favicon(self):
+        links = Page.load().links
+        self.assertTrue(any(l.get("rel") == "icon" and l.get("href") == "/assets/favicon.svg" for l in links))
+        self.assertTrue((ROOT / "assets" / "favicon.svg").exists())
 
 
 class SeoTests(unittest.TestCase):
