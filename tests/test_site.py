@@ -94,6 +94,26 @@ class PublishingTests(unittest.TestCase):
         r = subprocess.run(["git", "check-ignore", "-q", "Vlad_Lesovskiy_CV.pdf"], cwd=ROOT)
         self.assertEqual(r.returncode, 0)
 
+    def test_internal_dirs_ignored(self):
+        for path in [".claude/worktrees/x/index.html", ".claude/settings.json", ".superpowers/notes.md"]:
+            r = subprocess.run(["git", "check-ignore", "-q", "--no-index", path], cwd=ROOT)
+            self.assertEqual(r.returncode, 0, path)
+
+    def test_only_site_files_are_published(self):
+        published = {"index.html", "assets", "CNAME", "robots.txt", "sitemap.xml"}
+        cfg = (ROOT / "_config.yml").read_text()
+        excluded = set(re.findall(r"(?m)^\s*-\s*(\S+)\s*$", cfg))
+        tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout
+        top = {line.split("/")[0] for line in tracked.splitlines()}
+        leaks = {n for n in top if n not in published | excluded and not n.startswith((".", "_"))}
+        self.assertEqual(leaks, set(), "add to _config.yml exclude or to the published allowlist")
+
+    def test_font_license_shipped(self):
+        text = (ROOT / "assets" / "fonts" / "OFL.txt").read_text()
+        self.assertIn("SIL OPEN FONT LICENSE Version 1.1", text)
+        self.assertIn("Fraunces Project Authors", text)
+        self.assertIn("Open Sans Project Authors", text)
+
     def test_page_parses(self):
         self.assertEqual(Page.load().count("html"), 1)
 
